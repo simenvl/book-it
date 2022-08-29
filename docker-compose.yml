@@ -1,0 +1,12 @@
+services:
+  db:
+    image: postgres
+    environment:
+      POSTGRES_USER: bookit
+      POSTGRES_PASSWORD: test123
+      POSTGRES_DB: main
+    expose:
+      - 5434
+    ports:
+      - '5434:5434'
+    command: -p 5434

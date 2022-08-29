@@ -1,6 +1,10 @@
 import type { NextPage } from "next";
 import Head from "next/head";
+import { ChangeEvent, FormEvent, Fragment, useState } from "react";
 import { trpc } from "../utils/trpc";
+import _isEmpty from "lodash/isEmpty";
+import { Dialog, Transition } from "@headlessui/react";
+import { X } from "react-feather";
 
 type TechnologyCardProps = {
   name: string;
@@ -8,8 +12,53 @@ type TechnologyCardProps = {
   documentation: string;
 };
 
+type Input = {
+  name: string;
+  streetName: string;
+  postalCode: string;
+  city: string;
+  country: string;
+};
+
 const Home: NextPage = () => {
-  const hello = trpc.useQuery(["example.hello", { text: "from tRPC" }]);
+  const [inputValue, setInputValue] = useState<Input>();
+  const [isOpen, setIsOpen] = useState(false);
+
+  const ctx = trpc.useContext();
+  const { data: clinics, isLoading } = trpc.useQuery(["clinics.getAll"]);
+  const postClinic = trpc.useMutation(["clinics.createClinic"], {
+    onMutate: () => {
+      ctx.cancelQuery(["clinics.getAll"]);
+
+      const optimisticUpdate = ctx.getQueryData(["clinics.getAll"]);
+
+      if (optimisticUpdate) {
+        ctx.setQueryData(["clinics.getAll"], optimisticUpdate);
+      }
+    },
+    onSettled: () => {
+      ctx.invalidateQueries(["clinics.getAll"]);
+    },
+  });
+
+  const handleInpuChange = (event: ChangeEvent<HTMLInputElement>) => {
+    const input = event.target.value;
+
+    console.log({ input, inputValue });
+
+    setInputValue({
+      ...inputValue,
+      [event.target.name]: input,
+    } as Input);
+  };
+
+  const openModal = () => {
+    setIsOpen(!isOpen);
+  };
+
+  const closeModal = () => {
+    setIsOpen(!isOpen);
+  };
 
   return (
     <>
@@ -20,58 +69,182 @@ const Home: NextPage = () => {
       </Head>
 
       <main className="container mx-auto flex flex-col items-center justify-center min-h-screen p-4">
-        <h1 className="text-5xl md:text-[5rem] leading-normal font-extrabold text-gray-700">
-          Create <span className="text-purple-300">T3</span> App
-        </h1>
-        <p className="text-2xl text-gray-700">This stack uses:</p>
-        <div className="grid gap-3 pt-3 mt-3 text-center md:grid-cols-2 lg:w-2/3">
-          <TechnologyCard
-            name="NextJS"
-            description="The React framework for production"
-            documentation="https://nextjs.org/"
-          />
-          <TechnologyCard
-            name="TypeScript"
-            description="Strongly typed programming language that builds on JavaScript, giving you better tooling at any scale"
-            documentation="https://www.typescriptlang.org/"
-          />
-          <TechnologyCard
-            name="TailwindCSS"
-            description="Rapidly build modern websites without ever leaving your HTML"
-            documentation="https://tailwindcss.com/"
-          />
-          <TechnologyCard
-            name="tRPC"
-            description="End-to-end typesafe APIs made easy"
-            documentation="https://trpc.io/"
-          />
+        <div>
+          <div className="flex items-center justify-center">
+            <button
+              type="button"
+              onClick={openModal}
+              className="rounded-md bg-black bg-opacity-20 px-4 py-2 text-sm font-medium text-white hover:bg-opacity-30 focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-opacity-75"
+            >
+              Legg til ny klinikk
+            </button>
+          </div>
+
+          <Transition appear show={isOpen} as={Fragment}>
+            <Dialog as="div" className="relative z-10" onClose={closeModal}>
+              <Transition.Child
+                as={Fragment}
+                enter="ease-out duration-300"
+                enterFrom="opacity-0"
+                enterTo="opacity-100"
+                leave="ease-in duration-200"
+                leaveFrom="opacity-100"
+                leaveTo="opacity-0"
+              >
+                <div className="fixed inset-0 bg-black bg-opacity-25" />
+              </Transition.Child>
+
+              <div className="fixed inset-0 overflow-y-auto">
+                <div className="flex min-h-full items-center justify-center p-4 text-center">
+                  <Transition.Child
+                    as={Fragment}
+                    enter="ease-out duration-300"
+                    enterFrom="opacity-0 scale-95"
+                    enterTo="opacity-100 scale-100"
+                    leave="ease-in duration-200"
+                    leaveFrom="opacity-100 scale-100"
+                    leaveTo="opacity-0 scale-95"
+                  >
+                    <Dialog.Panel className="w-full max-w-md transform overflow-hidden rounded-2xl bg-white p-6 text-left align-middle shadow-xl transition-all">
+                      <Dialog.Title
+                        as="h3"
+                        className="text-lg font-medium leading-6 text-gray-900"
+                      >
+                        Lag ny klinikk
+                      </Dialog.Title>
+                      <div className="mt-2">
+                        <form
+                          className="flex flex-col gap-4"
+                          onSubmit={(event: FormEvent<HTMLFormElement>) => {
+                            event.preventDefault();
+
+                            if (_isEmpty(inputValue)) {
+                              return alert("Felter kan ikke være tomme");
+                            }
+
+                            if (!_isEmpty(inputValue)) {
+                              postClinic.mutate({
+                                name: inputValue?.name,
+                                streetName: inputValue?.streetName,
+                                postalCode: inputValue?.postalCode,
+                                city: inputValue?.city,
+                                country: inputValue?.country,
+                              });
+                            }
+
+                            setInputValue(
+                              Object.keys(inputValue).forEach(
+                                (key) => inputValue[key] === ""
+                              )
+                            );
+                          }}
+                        >
+                          <div className="flex flex-col">
+                            <label htmlFor="clinicName">Navn på klinikk</label>
+                            <input
+                              className="outline-none border rounded-md px-4 py-2"
+                              name="name"
+                              type="text"
+                              placeholder="Klinikk navn"
+                              value={inputValue?.name}
+                              onChange={handleInpuChange}
+                            />
+                          </div>
+                          <div className="flex flex-col">
+                            <label htmlFor="clinicName">Adresse</label>
+                            <input
+                              className="outline-none border rounded-md px-4 py-2"
+                              name="streetName"
+                              type="text"
+                              placeholder="Adresse"
+                              value={inputValue?.streetName}
+                              onChange={handleInpuChange}
+                            />
+                          </div>
+                          <div className="flex flex-col">
+                            <label htmlFor="clinicName">Postnummer</label>
+                            <input
+                              className="outline-none border rounded-md px-4 py-2"
+                              name="postalCode"
+                              type="text"
+                              placeholder="Postnummer"
+                              value={inputValue?.postalCode}
+                              onChange={handleInpuChange}
+                              maxLength={4}
+                            />
+                          </div>
+                          <div className="flex flex-col">
+                            <label htmlFor="clinicName">By</label>
+                            <input
+                              className="outline-none border rounded-md px-4 py-2"
+                              name="city"
+                              type="text"
+                              placeholder="By"
+                              value={inputValue?.city}
+                              onChange={handleInpuChange}
+                            />
+                          </div>
+                          <div className="flex flex-col">
+                            <label htmlFor="clinicName">Land</label>
+                            <input
+                              className="outline-none border rounded-md px-4 py-2"
+                              name="country"
+                              type="text"
+                              placeholder="Land"
+                              value={inputValue?.country}
+                              onChange={handleInpuChange}
+                            />
+                          </div>
+                          <div className="flex justify-end">
+                            <button
+                              type="submit"
+                              className="bg-blue-300 rounded-md py-2 px-4 hover:bg-blue-400 flex justify-center items-center gap-2 w-fit"
+                            >
+                              Lagre{" "}
+                              {postClinic.isLoading && (
+                                <svg
+                                  width={20}
+                                  height={20}
+                                  className="animate-spin"
+                                >
+                                  <circle
+                                    cx={10}
+                                    cy={10}
+                                    r={8}
+                                    fill="none"
+                                    stroke="rgb(57 143 249)"
+                                    strokeDashoffset={1}
+                                    strokeDasharray="90%"
+                                    strokeWidth={3}
+                                  />
+                                </svg>
+                              )}
+                            </button>
+                          </div>
+                        </form>
+                      </div>
+
+                      <div className="mt-4">
+                        <button
+                          type="button"
+                          className="absolute top-5 right-5 justify-center rounded-full border border-transparent bg-blue-100 p-2 text-sm font-medium text-blue-900 hover:bg-blue-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
+                          onClick={closeModal}
+                        >
+                          <X size={18} />
+                        </button>
+                      </div>
+                    </Dialog.Panel>
+                  </Transition.Child>
+                </div>
+              </div>
+            </Dialog>
+          </Transition>
         </div>
-        <div className="pt-6 text-2xl text-blue-500 flex justify-center items-center w-full">
-          {hello.data ? <p>{hello.data.greeting}</p> : <p>Loading..</p>}
-        </div>
+        {clinics?.map((clinic) => {
+          return <div key={clinic.id}>{clinic.name}</div>;
+        })}
       </main>
     </>
-  );
-};
-
-const TechnologyCard = ({
-  name,
-  description,
-  documentation,
-}: TechnologyCardProps) => {
-  return (
-    <section className="flex flex-col justify-center p-6 duration-500 border-2 border-gray-500 rounded shadow-xl motion-safe:hover:scale-105">
-      <h2 className="text-lg text-gray-700">{name}</h2>
-      <p className="text-sm text-gray-600">{description}</p>
-      <a
-        className="mt-3 text-sm underline text-violet-500 decoration-dotted underline-offset-2"
-        href={documentation}
-        target="_blank"
-        rel="noreferrer"
-      >
-        Documentation
-      </a>
-    </section>
   );
 };
 

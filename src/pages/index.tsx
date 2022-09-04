@@ -1,64 +1,12 @@
 import type { NextPage } from "next";
 import Head from "next/head";
-import { ChangeEvent, FormEvent, Fragment, useState } from "react";
 import { trpc } from "../utils/trpc";
-import _isEmpty from "lodash/isEmpty";
-import { Dialog, Transition } from "@headlessui/react";
-import { X } from "react-feather";
+import Link from "next/link";
+import useHistoryStore from "../hooks/useHistoryStore";
 
-type TechnologyCardProps = {
-  name: string;
-  description: string;
-  documentation: string;
-};
-
-type Input = {
-  name: string;
-  streetName: string;
-  postalCode: string;
-  city: string;
-  country: string;
-};
-
-const Home: NextPage = () => {
-  const [inputValue, setInputValue] = useState<Input>();
-  const [isOpen, setIsOpen] = useState(false);
-
-  const ctx = trpc.useContext();
-  const { data: clinics, isLoading } = trpc.useQuery(["clinics.getAll"]);
-  const postClinic = trpc.useMutation(["clinics.createClinic"], {
-    onMutate: () => {
-      ctx.cancelQuery(["clinics.getAll"]);
-
-      const optimisticUpdate = ctx.getQueryData(["clinics.getAll"]);
-
-      if (optimisticUpdate) {
-        ctx.setQueryData(["clinics.getAll"], optimisticUpdate);
-      }
-    },
-    onSettled: () => {
-      ctx.invalidateQueries(["clinics.getAll"]);
-    },
-  });
-
-  const handleInpuChange = (event: ChangeEvent<HTMLInputElement>) => {
-    const input = event.target.value;
-
-    console.log({ input, inputValue });
-
-    setInputValue({
-      ...inputValue,
-      [event.target.name]: input,
-    } as Input);
-  };
-
-  const openModal = () => {
-    setIsOpen(!isOpen);
-  };
-
-  const closeModal = () => {
-    setIsOpen(!isOpen);
-  };
+const Home: NextPage = (props) => {
+  const { data: clinics } = trpc.useQuery(["clinics.getAllClinics"]);
+  const setClinicId = useHistoryStore((state) => state.setClinicId);
 
   return (
     <>
@@ -69,179 +17,19 @@ const Home: NextPage = () => {
       </Head>
 
       <main className="container mx-auto flex flex-col items-center justify-center min-h-screen p-4">
-        <div>
-          <div className="flex items-center justify-center">
-            <button
-              type="button"
-              onClick={openModal}
-              className="rounded-md bg-black bg-opacity-20 px-4 py-2 text-sm font-medium text-white hover:bg-opacity-30 focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-opacity-75"
-            >
-              Legg til ny klinikk
-            </button>
-          </div>
-
-          <Transition appear show={isOpen} as={Fragment}>
-            <Dialog as="div" className="relative z-10" onClose={closeModal}>
-              <Transition.Child
-                as={Fragment}
-                enter="ease-out duration-300"
-                enterFrom="opacity-0"
-                enterTo="opacity-100"
-                leave="ease-in duration-200"
-                leaveFrom="opacity-100"
-                leaveTo="opacity-0"
-              >
-                <div className="fixed inset-0 bg-black bg-opacity-25" />
-              </Transition.Child>
-
-              <div className="fixed inset-0 overflow-y-auto">
-                <div className="flex min-h-full items-center justify-center p-4 text-center">
-                  <Transition.Child
-                    as={Fragment}
-                    enter="ease-out duration-300"
-                    enterFrom="opacity-0 scale-95"
-                    enterTo="opacity-100 scale-100"
-                    leave="ease-in duration-200"
-                    leaveFrom="opacity-100 scale-100"
-                    leaveTo="opacity-0 scale-95"
-                  >
-                    <Dialog.Panel className="w-full max-w-md transform overflow-hidden rounded-2xl bg-white p-6 text-left align-middle shadow-xl transition-all">
-                      <Dialog.Title
-                        as="h3"
-                        className="text-lg font-medium leading-6 text-gray-900"
-                      >
-                        Lag ny klinikk
-                      </Dialog.Title>
-                      <div className="mt-2">
-                        <form
-                          className="flex flex-col gap-4"
-                          onSubmit={(event: FormEvent<HTMLFormElement>) => {
-                            event.preventDefault();
-
-                            if (_isEmpty(inputValue)) {
-                              return alert("Felter kan ikke være tomme");
-                            }
-
-                            if (!_isEmpty(inputValue)) {
-                              postClinic.mutate({
-                                name: inputValue?.name,
-                                streetName: inputValue?.streetName,
-                                postalCode: inputValue?.postalCode,
-                                city: inputValue?.city,
-                                country: inputValue?.country,
-                              });
-                            }
-
-                            setInputValue(
-                              Object.keys(inputValue).forEach(
-                                (key) => inputValue[key] === ""
-                              )
-                            );
-                          }}
-                        >
-                          <div className="flex flex-col">
-                            <label htmlFor="clinicName">Navn på klinikk</label>
-                            <input
-                              className="outline-none border rounded-md px-4 py-2"
-                              name="name"
-                              type="text"
-                              placeholder="Klinikk navn"
-                              value={inputValue?.name}
-                              onChange={handleInpuChange}
-                            />
-                          </div>
-                          <div className="flex flex-col">
-                            <label htmlFor="clinicName">Adresse</label>
-                            <input
-                              className="outline-none border rounded-md px-4 py-2"
-                              name="streetName"
-                              type="text"
-                              placeholder="Adresse"
-                              value={inputValue?.streetName}
-                              onChange={handleInpuChange}
-                            />
-                          </div>
-                          <div className="flex flex-col">
-                            <label htmlFor="clinicName">Postnummer</label>
-                            <input
-                              className="outline-none border rounded-md px-4 py-2"
-                              name="postalCode"
-                              type="text"
-                              placeholder="Postnummer"
-                              value={inputValue?.postalCode}
-                              onChange={handleInpuChange}
-                              maxLength={4}
-                            />
-                          </div>
-                          <div className="flex flex-col">
-                            <label htmlFor="clinicName">By</label>
-                            <input
-                              className="outline-none border rounded-md px-4 py-2"
-                              name="city"
-                              type="text"
-                              placeholder="By"
-                              value={inputValue?.city}
-                              onChange={handleInpuChange}
-                            />
-                          </div>
-                          <div className="flex flex-col">
-                            <label htmlFor="clinicName">Land</label>
-                            <input
-                              className="outline-none border rounded-md px-4 py-2"
-                              name="country"
-                              type="text"
-                              placeholder="Land"
-                              value={inputValue?.country}
-                              onChange={handleInpuChange}
-                            />
-                          </div>
-                          <div className="flex justify-end">
-                            <button
-                              type="submit"
-                              className="bg-blue-300 rounded-md py-2 px-4 hover:bg-blue-400 flex justify-center items-center gap-2 w-fit"
-                            >
-                              Lagre{" "}
-                              {postClinic.isLoading && (
-                                <svg
-                                  width={20}
-                                  height={20}
-                                  className="animate-spin"
-                                >
-                                  <circle
-                                    cx={10}
-                                    cy={10}
-                                    r={8}
-                                    fill="none"
-                                    stroke="rgb(57 143 249)"
-                                    strokeDashoffset={1}
-                                    strokeDasharray="90%"
-                                    strokeWidth={3}
-                                  />
-                                </svg>
-                              )}
-                            </button>
-                          </div>
-                        </form>
-                      </div>
-
-                      <div className="mt-4">
-                        <button
-                          type="button"
-                          className="absolute top-5 right-5 justify-center rounded-full border border-transparent bg-blue-100 p-2 text-sm font-medium text-blue-900 hover:bg-blue-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
-                          onClick={closeModal}
-                        >
-                          <X size={18} />
-                        </button>
-                      </div>
-                    </Dialog.Panel>
-                  </Transition.Child>
-                </div>
-              </div>
-            </Dialog>
-          </Transition>
-        </div>
         {clinics?.map((clinic) => {
-          return <div key={clinic.id}>{clinic.name}</div>;
+          return (
+            <div key={clinic.id} onClick={() => setClinicId(clinic.id)}>
+              <Link
+                href={{
+                  pathname: `${clinic.name.toLowerCase()}`,
+                  // query: { id: clinic.id },
+                }}
+              >
+                {clinic.name}
+              </Link>
+            </div>
+          );
         })}
       </main>
     </>

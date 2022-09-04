@@ -26,12 +26,22 @@ export const clinicsRouter = createRouter()
       }
     },
   })
-  .query("getAll", {
+
+  .query("getAllClinics", {
     async resolve({ ctx }) {
       return await ctx.prisma.clinics.findMany({
         orderBy: {
           createdAt: "desc",
         },
+      });
+    },
+  })
+
+  .query("getClinic", {
+    input: z.object({ id: z.string() }),
+    async resolve({ ctx, input }) {
+      return await ctx.prisma.clinics.findUnique({
+        where: { id: input.id },
       });
     },
   });

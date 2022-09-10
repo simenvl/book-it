@@ -35,13 +35,15 @@ const SideBarMenu = ({ toggleSettingsView }: SideBarMenuProps) => {
         <Users />
         Resursser
       </SideBarMenuItem>
-      <div
-        className="flex flex-col items-center cursor-pointer"
-        onClick={() => handleSettingsView(2, "services")}
+
+      <SideBarMenuItem
+        handleSettings={() => handleSettingsView(2, "services")}
+        menuKey={2}
+        viewKey={viewKey}
       >
         <Activity />
         Tjenester
-      </div>
+      </SideBarMenuItem>
     </div>
   );
 };

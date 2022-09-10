@@ -23,21 +23,14 @@ const ResourceForm = () => {
 
       const optimisticUpdate = ctx.getQueryData([
         "resources.getResourceInClinic",
-        { id: clinicId },
       ]);
 
       if (optimisticUpdate) {
-        ctx.setQueryData(
-          ["resources.getResourceInClinic", { id: clinicId }],
-          optimisticUpdate
-        );
+        ctx.setQueryData(["resources.getResourceInClinic"], optimisticUpdate);
       }
     },
     onSettled: () => {
-      ctx.invalidateQueries([
-        "resources.getResourceInClinic",
-        { id: clinicId },
-      ]);
+      ctx.invalidateQueries(["resources.getResourceInClinic"]);
     },
   });
 
@@ -96,6 +89,9 @@ const ResourceForm = () => {
           name="clinicsId"
           onChange={handleInpuChange}
         >
+          <option value="" selected>
+            Velg en klinikk
+          </option>
           {clinics.data?.map((clinic) => {
             return (
               <option key={clinic.id} value={clinic.id}>
@@ -109,7 +105,7 @@ const ResourceForm = () => {
       <div className="flex justify-end">
         <button
           type="submit"
-          className="bg-blue-300 rounded-md py-2 px-4 hover:bg-blue-400 flex justify-center items-center gap-2 w-fit"
+          className="bg-blue-100 rounded-md py-2 px-4 hover:bg-blue-400 flex justify-center items-center gap-2 w-fit"
         >
           Lagre{" "}
           {postResource.isLoading && (

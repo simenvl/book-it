@@ -14,7 +14,7 @@ const useHistoryStore = create<HistoryStoreType>()(
 
         setClinicId: (id) => set(() => ({ clinicId: id })),
       }),
-      { name: "historyStore", getStorage: () => sessionStorage }
+      { name: "historyStore" }
     )
   )
 );

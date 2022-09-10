@@ -12,10 +12,12 @@ import Resources from "./resources";
 import ModalWithContent from "../../components/ModalWithContent/ModalWithContent";
 import Link from "next/link";
 import ClinicForm from "../../components/Forms/ClinicForm";
+import Services from "./services";
 
 const getSettingsView = (view: SettingsKeys) => {
   const settingsView: SettingsView = {
     resources: <Resources />,
+    services: <Services />,
   };
 
   return settingsView[view];
@@ -38,16 +40,12 @@ const Clinic: NextPage = (props) => {
     setSettingsView(view);
   };
 
-  const changeClinicId = (clinicId: string) => {
-    setClinicId(clinicId);
-  };
-
   return (
     <>
       {!clinics.isLoading && (
         <div>
           <header>
-            <nav className="flex p-4 shadow-md items-center">
+            <nav className="flex p-4 shadow-md items-center z-10">
               <div className="flex items-center w-full justify-between">
                 <h1>{clinic.data?.name}</h1>
                 <div className="flex items-center gap-4">
@@ -55,6 +53,7 @@ const Clinic: NextPage = (props) => {
                     <ModalWithContent
                       modalTitle="Lag ny klinikk"
                       buttonTitle="Legg til ny klinikk"
+                      options={{ asButton: true }}
                     >
                       <ClinicForm />
                     </ModalWithContent>
@@ -63,6 +62,7 @@ const Clinic: NextPage = (props) => {
                     <ModalWithContent
                       modalTitle="Alle klinikker"
                       buttonTitle="Alle klinikker"
+                      options={{ asButton: true }}
                     >
                       {clinics.data?.map((clinic) => (
                         <Link
@@ -71,16 +71,17 @@ const Clinic: NextPage = (props) => {
                             pathname: `${clinic.name.toLowerCase()}`,
                           }}
                         >
-                          <span
-                            className="w-full p-4 flex cursor-pointer hover:bg-gray-100 rounded-lg"
+                          <div
+                            className="w-full p-4 flex flex-col gap-2 cursor-pointer hover:bg-gray-100 rounded-lg"
                             onClick={(e) => {
                               console.log(e);
                               setClinicId(clinic.id);
                               setModalOpen(!modalOpen);
                             }}
                           >
-                            {clinic.name}
-                          </span>
+                            <span className="font-bold">{clinic.name}</span>
+                            <span className="text-sm">{clinic.streetName}</span>
+                          </div>
                         </Link>
                       ))}
                     </ModalWithContent>
@@ -94,7 +95,9 @@ const Clinic: NextPage = (props) => {
               toggleSettingsView={(view) => toggleSettingsView(view)}
             />
 
-            <div className="p-12 w-full">{getSettingsView(settingsView)}</div>
+            <div className="bg-gray-100 w-full">
+              <div className="p-12 w-full">{getSettingsView(settingsView)}</div>
+            </div>
           </div>
         </div>
       )}

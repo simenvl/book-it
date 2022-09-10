@@ -1,35 +1,56 @@
 import { ChangeEvent, FormEvent, useState } from "react";
 import { trpc } from "../../../utils/trpc";
 import _isEmpty from "lodash/isEmpty";
+import useHistoryStore from "../../../hooks/useHistoryStore";
 
 type Input = {
   name: string;
-  streetName: string;
-  postalCode: string;
-  city: string;
-  country: string;
+  duration: string;
+  price: string;
+  resourceId: string;
 };
 
-const ClinicForm = () => {
+const ServicesForm = () => {
+  const clinicId = useHistoryStore((state) => state.clinicId);
   const ctx = trpc.useContext();
-  const [inputValue, setInputValue] = useState<Input>();
+  const [inputValue, setInputValue] = useState<Input>({
+    name: "",
+    duration: "",
+    price: "",
+    resourceId: "",
+  });
 
-  const postClinic = trpc.useMutation(["clinics.createClinic"], {
+  const resources = trpc.useQuery([
+    "resources.getResourceInClinic",
+    { id: clinicId },
+  ]);
+  const postService = trpc.useMutation(["services.createService"], {
     onMutate: () => {
-      ctx.cancelQuery(["clinics.getAllClinics"]);
+      ctx.cancelQuery(["services.getServicesInClinic"]);
 
-      const optimisticUpdate = ctx.getQueryData(["clinics.getAllClinics"]);
+      const optimisticUpdate = ctx.getQueryData([
+        "services.getServicesInClinic",
+        { clinicId: clinicId },
+      ]);
 
       if (optimisticUpdate) {
-        ctx.setQueryData(["clinics.getAllClinics"], optimisticUpdate);
+        ctx.setQueryData(
+          ["services.getServicesInClinic", { clinicId: clinicId }],
+          optimisticUpdate
+        );
       }
     },
     onSettled: () => {
-      ctx.invalidateQueries(["clinics.getAllClinics"]);
+      ctx.invalidateQueries([
+        "services.getServicesInClinic",
+        { clinicId: clinicId },
+      ]);
     },
   });
 
-  const handleInpuChange = (event: ChangeEvent<HTMLInputElement>) => {
+  const handleInpuChange = (
+    event: ChangeEvent<HTMLInputElement | HTMLSelectElement>
+  ) => {
     const input = event.target.value;
 
     console.log({ input, inputValue });
@@ -51,87 +72,85 @@ const ClinicForm = () => {
         }
 
         if (!_isEmpty(inputValue)) {
-          postClinic.mutate({
+          postService.mutate({
             name: inputValue?.name,
-            streetName: inputValue?.streetName,
-            postalCode: inputValue?.postalCode,
-            city: inputValue?.city,
-            country: inputValue?.country,
+            duration: parseInt(inputValue.duration),
+            price: parseInt(inputValue.price),
+            resourceId: inputValue.resourceId,
+            clinicsId: clinicId,
           });
         }
 
         setInputValue({
           name: "",
-          streetName: "",
-          postalCode: "",
-          city: "",
-          country: "",
+          duration: "",
+          price: "",
+          resourceId: "",
         });
       }}
     >
       <div className="flex flex-col">
-        <label htmlFor="clinicName">Navn på klinikk</label>
+        <label htmlFor="name">Navn på tjeneste</label>
         <input
           className="outline-none border rounded-md px-4 py-2"
           name="name"
           type="text"
-          placeholder="Klinikk navn"
+          placeholder="Navn på tjeneste"
           value={inputValue?.name}
           onChange={handleInpuChange}
         />
       </div>
+
       <div className="flex flex-col">
-        <label htmlFor="clinicName">Adresse</label>
+        <label htmlFor="duration">Lengde på tjeneste</label>
         <input
           className="outline-none border rounded-md px-4 py-2"
-          name="streetName"
-          type="text"
-          placeholder="Adresse"
-          value={inputValue?.streetName}
+          name="duration"
+          type="number"
+          placeholder="Lengde på tjeneste"
+          value={inputValue?.duration}
           onChange={handleInpuChange}
         />
       </div>
       <div className="flex flex-col">
-        <label htmlFor="clinicName">Postnummer</label>
+        <label htmlFor="price">Pris</label>
         <input
           className="outline-none border rounded-md px-4 py-2"
-          name="postalCode"
-          type="text"
-          placeholder="Postnummer"
-          value={inputValue?.postalCode}
+          name="price"
+          type="number"
+          placeholder="Pris"
+          value={inputValue?.price}
           onChange={handleInpuChange}
-          maxLength={4}
         />
       </div>
+
       <div className="flex flex-col">
-        <label htmlFor="clinicName">By</label>
-        <input
+        <label htmlFor="clinicName">Velg behandler(e)</label>
+        <select
           className="outline-none border rounded-md px-4 py-2"
-          name="city"
-          type="text"
-          placeholder="By"
-          value={inputValue?.city}
+          name="resourceId"
           onChange={handleInpuChange}
-        />
+        >
+          <option value="" selected>
+            Velg en behandler
+          </option>
+          {resources.data?.map((resource) => {
+            return (
+              <option key={resource.id} value={resource.id}>
+                {resource.name}
+              </option>
+            );
+          })}
+        </select>
       </div>
-      <div className="flex flex-col">
-        <label htmlFor="clinicName">Land</label>
-        <input
-          className="outline-none border rounded-md px-4 py-2"
-          name="country"
-          type="text"
-          placeholder="Land"
-          value={inputValue?.country}
-          onChange={handleInpuChange}
-        />
-      </div>
+
       <div className="flex justify-end">
         <button
           type="submit"
           className="bg-blue-100 rounded-md py-2 px-4 hover:bg-blue-400 flex justify-center items-center gap-2 w-fit"
         >
           Lagre{" "}
-          {postClinic.isLoading && (
+          {postService.isLoading && (
             <svg width={20} height={20} className="animate-spin">
               <circle
                 cx={10}
@@ -151,4 +170,4 @@ const ClinicForm = () => {
   );
 };
 
-export default ClinicForm;
+export default ServicesForm;

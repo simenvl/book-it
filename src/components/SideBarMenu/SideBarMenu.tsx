@@ -1,10 +1,11 @@
 import { useState } from "react";
-import { Activity, Users } from "react-feather";
+import { Activity, Settings, Users } from "react-feather";
 import SideBarMenuItem from "./SideBarMenuItem";
 
 export type SettingsView = {
   resources?: JSX.Element;
   services?: JSX.Element;
+  settings?: JSX.Element;
 };
 
 type Settings = {
@@ -43,6 +44,15 @@ const SideBarMenu = ({ toggleSettingsView }: SideBarMenuProps) => {
       >
         <Activity />
         Tjenester
+      </SideBarMenuItem>
+
+      <SideBarMenuItem
+        handleSettings={() => handleSettingsView(3, "settings")}
+        menuKey={3}
+        viewKey={viewKey}
+      >
+        <Settings />
+        Innstillinger
       </SideBarMenuItem>
     </div>
   );

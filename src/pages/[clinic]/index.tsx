@@ -13,11 +13,14 @@ import ModalWithContent from "../../components/ModalWithContent/ModalWithContent
 import Link from "next/link";
 import ClinicForm from "../../components/Forms/ClinicForm";
 import Services from "./services";
+import { Edit } from "react-feather";
+import Settings from "./settings";
 
 const getSettingsView = (view: SettingsKeys) => {
   const settingsView: SettingsView = {
     resources: <Resources />,
     services: <Services />,
+    settings: <Settings />,
   };
 
   return settingsView[view];
@@ -25,7 +28,7 @@ const getSettingsView = (view: SettingsKeys) => {
 
 const Clinic: NextPage = (props) => {
   const [settingsView, setSettingsView] = useState<SettingsKeys>("resources");
-  const [modalOpen, setModalOpen, toggleModal] = useModal();
+  const [modalOpen, setModalOpen] = useModal();
 
   const { clinicId, setClinicId } = useHistoryStore((state) => ({
     clinicId: state.clinicId,
@@ -65,24 +68,39 @@ const Clinic: NextPage = (props) => {
                       options={{ asButton: true }}
                     >
                       {clinics.data?.map((clinic) => (
-                        <Link
+                        <div
                           key={clinic.id}
-                          href={{
-                            pathname: `${clinic.name.toLowerCase()}`,
-                          }}
+                          className="flex justify-between items-center"
                         >
-                          <div
-                            className="w-full p-4 flex flex-col gap-2 cursor-pointer hover:bg-gray-100 rounded-lg"
-                            onClick={(e) => {
-                              console.log(e);
-                              setClinicId(clinic.id);
-                              setModalOpen(!modalOpen);
+                          <Link
+                            href={{
+                              pathname: `${clinic.name.toLowerCase()}`,
                             }}
                           >
-                            <span className="font-bold">{clinic.name}</span>
-                            <span className="text-sm">{clinic.streetName}</span>
-                          </div>
-                        </Link>
+                            <div
+                              className="w-full p-4 flex flex-col gap-2 cursor-pointer hover:bg-gray-100 rounded-lg"
+                              onClick={(e) => {
+                                console.log(e);
+                                setClinicId(clinic.id);
+                                setModalOpen(!modalOpen);
+                              }}
+                            >
+                              <span className="font-bold">{clinic.name}</span>
+                              <span className="text-sm">
+                                {clinic.streetName}
+                              </span>
+                            </div>
+                          </Link>
+                          <Edit
+                            className="cursor-pointer"
+                            onClick={() => {
+                              <ModalWithContent modalTitle="Rediger klinikk">
+                                <ClinicForm />
+                              </ModalWithContent>;
+                              console.log("Rediger klinikk", clinic.name);
+                            }}
+                          />
+                        </div>
                       ))}
                     </ModalWithContent>
                   </div>

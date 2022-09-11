@@ -10,14 +10,50 @@ type Input = {
   country: string;
 };
 
-const ClinicForm = () => {
+type ClinicFormProps =
+  | {
+      update: true;
+      clinicId: string;
+    }
+  | { update?: false; clinicId?: never };
+
+const ClinicForm = ({ update, clinicId }: ClinicFormProps) => {
   const ctx = trpc.useContext();
   const [inputValue, setInputValue] = useState<Input>();
+
+  const getClinicInfo = clinicId
+    ? trpc.useQuery(["clinics.getClinic", { id: clinicId }], {
+        onSettled: (data) => {
+          if (data) {
+            setInputValue({
+              name: data.name,
+              city: data.city,
+              country: data.country,
+              postalCode: data.postalCode,
+              streetName: data.streetName,
+            });
+          }
+        },
+      })
+    : null;
 
   const postClinic = trpc.useMutation(["clinics.createClinic"], {
     onMutate: () => {
       ctx.cancelQuery(["clinics.getAllClinics"]);
 
+      const optimisticUpdate = ctx.getQueryData(["clinics.getAllClinics"]);
+
+      if (optimisticUpdate) {
+        ctx.setQueryData(["clinics.getAllClinics"], optimisticUpdate);
+      }
+    },
+    onSettled: () => {
+      ctx.invalidateQueries(["clinics.getAllClinics"]);
+    },
+  });
+
+  const updateClinic = trpc.useMutation(["clinics.updateClinic"], {
+    onMutate: () => {
       const optimisticUpdate = ctx.getQueryData(["clinics.getAllClinics"]);
 
       if (optimisticUpdate) {
@@ -40,25 +76,22 @@ const ClinicForm = () => {
     } as Input);
   };
 
-  return (
-    <form
-      className="flex flex-col gap-4"
-      onSubmit={(event: FormEvent<HTMLFormElement>) => {
-        event.preventDefault();
+  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
 
-        if (_isEmpty(inputValue)) {
-          return alert("Felter kan ikke være tomme");
-        }
+    if (_isEmpty(inputValue)) {
+      return alert("Felter kan ikke være tomme");
+    }
 
-        if (!_isEmpty(inputValue)) {
-          postClinic.mutate({
-            name: inputValue?.name,
-            streetName: inputValue?.streetName,
-            postalCode: inputValue?.postalCode,
-            city: inputValue?.city,
-            country: inputValue?.country,
-          });
-        }
+    if (!_isEmpty(inputValue)) {
+      if (!update) {
+        postClinic.mutate({
+          name: inputValue?.name,
+          streetName: inputValue?.streetName,
+          postalCode: inputValue?.postalCode,
+          city: inputValue?.city,
+          country: inputValue?.country,
+        });
 
         setInputValue({
           name: "",
@@ -67,8 +100,21 @@ const ClinicForm = () => {
           city: "",
           country: "",
         });
-      }}
-    >
+      } else {
+        updateClinic.mutate({
+          id: clinicId,
+          name: inputValue.name,
+          streetName: inputValue?.streetName,
+          postalCode: inputValue?.postalCode,
+          city: inputValue?.city,
+          country: inputValue?.country,
+        });
+      }
+    }
+  };
+
+  return (
+    <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
       <div className="flex flex-col">
         <label htmlFor="clinicName">Navn på klinikk</label>
         <input

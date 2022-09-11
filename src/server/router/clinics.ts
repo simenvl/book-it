@@ -44,4 +44,31 @@ export const clinicsRouter = createRouter()
         where: { id: input.id },
       });
     },
+  })
+
+  .mutation("updateClinic", {
+    input: z.object({
+      id: z.string(),
+      name: z.string(),
+      streetName: z.string(),
+      postalCode: z.string(),
+      city: z.string(),
+      country: z.string(),
+    }),
+    async resolve({ ctx, input }) {
+      try {
+        await ctx.prisma.clinics.update({
+          where: { id: input.id },
+          data: {
+            name: input.name,
+            streetName: input.streetName,
+            postalCode: input.postalCode,
+            city: input.city,
+            country: input.country,
+          },
+        });
+      } catch (error) {
+        console.log(error);
+      }
+    },
   });

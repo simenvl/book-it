@@ -8,6 +8,7 @@ type Input = {
   duration: string;
   price: string;
   resourceId: string;
+  clinicId: string;
 };
 
 const ServicesForm = () => {
@@ -18,12 +19,14 @@ const ServicesForm = () => {
     duration: "",
     price: "",
     resourceId: "",
+    clinicId: "",
   });
 
   const resources = trpc.useQuery([
     "resources.getResourceInClinic",
     { id: clinicId },
   ]);
+  const clinics = trpc.useQuery(["clinics.getAllClinics"]);
   const postService = trpc.useMutation(["services.createService"], {
     onMutate: () => {
       ctx.cancelQuery(["services.getServicesInClinic"]);
@@ -77,7 +80,7 @@ const ServicesForm = () => {
             duration: parseInt(inputValue.duration),
             price: parseInt(inputValue.price),
             resourceId: inputValue.resourceId,
-            clinicsId: clinicId,
+            clinicId: inputValue.clinicId,
           });
         }
 
@@ -86,6 +89,7 @@ const ServicesForm = () => {
           duration: "",
           price: "",
           resourceId: "",
+          clinicId: "",
         });
       }}
     >
@@ -138,6 +142,26 @@ const ServicesForm = () => {
             return (
               <option key={resource.id} value={resource.id}>
                 {resource.name}
+              </option>
+            );
+          })}
+        </select>
+      </div>
+
+      <div className="flex flex-col">
+        <label htmlFor="clinicName">Velg klinikk(er)</label>
+        <select
+          className="outline-none border rounded-md px-4 py-2"
+          name="clinicId"
+          onChange={handleInpuChange}
+        >
+          <option value="" selected>
+            Velg en klinikk
+          </option>
+          {clinics.data?.map((clinic) => {
+            return (
+              <option key={clinic.id} value={clinic.id}>
+                {clinic.name}
               </option>
             );
           })}

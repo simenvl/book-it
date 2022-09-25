@@ -8,7 +8,7 @@ export const servicesRouter = createRouter()
       price: z.number(),
       duration: z.number(),
       resourceId: z.string(),
-      clinicsId: z.string(),
+      clinicId: z.string(),
     }),
     async resolve({ ctx, input }) {
       try {
@@ -19,7 +19,12 @@ export const servicesRouter = createRouter()
             duration: input.duration,
             resources: {
               create: {
-                resourceId: input.resourceId,
+                resourcesId: input.resourceId,
+              },
+            },
+            clinics: {
+              create: {
+                clinicsId: input.clinicId,
               },
             },
           },
@@ -53,13 +58,8 @@ export const servicesRouter = createRouter()
     input: z.object({ id: z.string() }),
     async resolve({ ctx, input }) {
       return await ctx.prisma.services.findMany({
-        where: {
-          resources: {
-            some: {
-              serviceId: input.id,
-            },
-          },
-        },
+        where: { id: input.id },
+        include: { resources: true },
       });
     },
   })
@@ -68,11 +68,7 @@ export const servicesRouter = createRouter()
     input: z.object({ clinicId: z.string() }),
     async resolve({ ctx, input }) {
       return await ctx.prisma.services.findMany({
-        where: {
-          resources: {
-            some: { clinicsId: input.clinicId },
-          },
-        },
+        where: { clinics: { some: { clinicsId: input.clinicId } } },
       });
     },
   });

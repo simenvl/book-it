@@ -68,14 +68,13 @@ export const resourcesRouter = createRouter()
     },
   })
 
-  .query("getResourceWithService", {
-    input: z.object({ serviceId: z.string() }),
+  .query("getServicesInResource", {
+    input: z.object({ resourceId: z.string() }),
     async resolve({ ctx, input }) {
       try {
         return await ctx.prisma.resources.findMany({
-          where: {
-            services: { some: { serviceId: input.serviceId } },
-          },
+          where: { id: input.resourceId },
+          select: { services: { select: { servicesId: true } } },
         });
       } catch (error) {
         console.log(error);
@@ -96,11 +95,26 @@ export const resourcesRouter = createRouter()
     },
   })
 
+  .mutation("deleteServiceFromResource", {
+    input: z.object({ serviceId: z.string(), resourceId: z.string() }),
+    async resolve({ ctx, input }) {
+      try {
+        return await ctx.prisma.servicesWithResources.delete({
+          where: {
+            resourcesId_servicesId: {
+              servicesId: input.serviceId,
+              resourcesId: input.resourceId,
+            },
+          },
+        });
+      } catch (error) {}
+    },
+  })
+
   .mutation("updateResource", {
     input: z.object({
       resourceId: z.string(),
       serviceId: z.string(),
-      clinicId: z.string(),
     }),
     async resolve({ ctx, input }) {
       try {
@@ -108,8 +122,14 @@ export const resourcesRouter = createRouter()
           where: { id: input.resourceId },
           data: {
             services: {
+              deleteMany: {
+                servicesId: input.serviceId,
+                resourcesId: input.resourceId,
+              },
               createMany: {
-                data: { serviceId: input.serviceId, clinicsId: input.clinicId },
+                data: {
+                  servicesId: input.serviceId,
+                },
               },
             },
           },

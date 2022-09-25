@@ -1,4 +1,6 @@
+import { Services } from "@prisma/client";
 import { NextPage } from "next";
+import { useState } from "react";
 import ItemOptions from "../../components/ItemOptions";
 import ListOptions from "../../components/ListOptions";
 import ModalWithContent from "../../components/ModalWithContent/ModalWithContent";
@@ -7,11 +9,17 @@ import useHistoryStore from "../../hooks/useHistoryStore";
 import { trpc } from "../../utils/trpc";
 
 const Resources: NextPage = (props) => {
+  const [services, setServices] = useState<Services[]>();
   const clinicId = useHistoryStore((state) => state.clinicId);
   const resources = trpc.useQuery([
     "resources.getResourceInClinic",
     { id: clinicId },
   ]);
+
+  const servicesQuery = trpc.useQuery(
+    ["services.getServicesInClinic", { clinicId }],
+    { onSettled: (data) => setServices(data) }
+  );
 
   return (
     <PageWrap
@@ -31,7 +39,13 @@ const Resources: NextPage = (props) => {
               buttonTitle={resource.name}
               buttonClassName="font-bold"
             >
-              <ListOptions clinicId={clinicId} resourceId={resource.id} />
+              {services && (
+                <ListOptions
+                  clinicId={clinicId}
+                  services={services}
+                  resourceId={resource.id}
+                />
+              )}
             </ModalWithContent>
             <ItemOptions id={resource.id} />
           </div>

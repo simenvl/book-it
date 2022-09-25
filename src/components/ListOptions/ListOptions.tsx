@@ -1,10 +1,12 @@
+import { Services } from "@prisma/client";
 import { useState } from "react";
 import { trpc } from "../../utils/trpc";
-import MultiSelectDropdown from "../MultiSelectDropdown";
+import MultiSelectDropdown from "../Select";
 
 type ListOptionsProps = {
-  clinicId: string;
+  services: Services[];
   resourceId: string;
+  clinicId: string;
 };
 
 export type SelectedOption = {
@@ -12,61 +14,71 @@ export type SelectedOption = {
   name: string;
 };
 
-type SelectedOptions = SelectedOption[];
-
-const ListOptions = ({ clinicId, resourceId }: ListOptionsProps) => {
-  const services = trpc.useQuery(["services.getAllServices"]);
+const ListOptions = ({ clinicId, services, resourceId }: ListOptionsProps) => {
   const ctx = trpc.useContext();
-  const [selected, setSelected] = useState<string[]>([]);
-  const updateResource = trpc.useMutation(["resources.updateResource"], {
-    onMutate: () => {
-      ctx.cancelQuery(["services.getServiceInResource"]);
+  const [value, setValue] = useState<Services[]>([]);
 
-      const optimisticUpdate = ctx.getQueryData([
-        "services.getServiceInResource",
-      ]);
+  const servicesInResource = trpc.useQuery(
+    ["resources.getServicesInResource", { resourceId }],
+    {
+      onSuccess: (data) => {
+        const serviceIdsInResource = data?.flatMap((service) =>
+          service.services.flatMap((id) => id.servicesId)
+        );
 
-      if (optimisticUpdate) {
-        ctx.setQueryData(["services.getServiceInResource"], optimisticUpdate);
-      }
-    },
-    onSettled: () => {
-      ctx.invalidateQueries(["services.getServiceInResource"]);
-    },
-  });
+        const resourceHasService = services?.filter((service) => {
+          return serviceIdsInResource?.includes(service.id);
+        });
 
-  const toggleOption = ({ id, name }: { id: string; name: string }) => {
-    /* const servicesInResource = trpc.useQuery([
-      "services.getServiceInResource",
-      { id: id },
-    ]);
-    console.log(servicesInResource.data); */
-    setSelected((prevSelected) => {
-      const newArr = [...prevSelected];
+        setValue(resourceHasService);
+      },
+    }
+  );
 
-      console.log(id, name);
+  // const updateResource = trpc.useMutation(["resources.updateResource"], {
+  //   onMutate: () => {
+  //     ctx.cancelQuery(["services.getServiceInResource"]);
 
-      updateResource.mutate({
-        resourceId: resourceId,
-        serviceId: id,
-        clinicId: clinicId,
-      });
+  //     const optimisticUpdate = ctx.getQueryData([
+  //       "services.getServiceInResource",
+  //     ]);
 
-      if (newArr.includes(name)) {
-        return newArr.filter((item) => item !== name);
-      } else {
-        newArr.push(name);
-        return newArr;
-      }
-    });
-  };
+  //     if (optimisticUpdate) {
+  //       ctx.setQueryData(["services.getServiceInResource"], optimisticUpdate);
+  //     }
+  //   },
+  //   onSettled: () => {
+  //     ctx.invalidateQueries(["services.getServiceInResource"]);
+  //   },
+  // });
+
+  // const deleteServiceFromResource = trpc.useMutation(
+  //   ["resources.deleteServiceFromResource"],
+  //   {
+  //     onMutate: () => {
+  //       ctx.cancelQuery(["services.getServiceInResource"]);
+
+  //       const optimisticUpdate = ctx.getQueryData([
+  //         "services.getServiceInResource",
+  //       ]);
+
+  //       if (optimisticUpdate) {
+  //         ctx.setQueryData(["services.getServiceInResource"], optimisticUpdate);
+  //       }
+  //     },
+  //     onSettled: () => {
+  //       ctx.invalidateQueries(["services.getServiceInResource"]);
+  //     },
+  //   }
+  // );
 
   return (
     <>
       <MultiSelectDropdown
-        options={services.data}
-        toggleOption={toggleOption}
-        selected={selected}
+        multiple
+        options={services}
+        onChange={(o) => setValue(o)}
+        value={value}
       />
     </>
   );

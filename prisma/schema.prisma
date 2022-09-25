@@ -67,16 +67,16 @@ model VerificationToken {
 }
 
 model Clinics {
-    id         String                  @default(uuid())
-    createdAt  DateTime                @default(now())
-    updatedAt  DateTime                @updatedAt
+    id         String              @default(uuid())
+    createdAt  DateTime            @default(now())
+    updatedAt  DateTime            @updatedAt
     name       String
     streetName String
-    postalCode String                  @db.VarChar(4)
+    postalCode String              @db.VarChar(4)
     city       String
     country    String
     resources  ResourcesInClinic[]
-    services   ServicesWithResources[]
+    services   ServiceInClinic[]
 
     @@unique([id])
 }
@@ -101,20 +101,27 @@ model Services {
     price     Int
     duration  Int
     resources ServicesWithResources[]
+    clinics   ServiceInClinic[]
 
     @@unique([id])
 }
 
-model ServicesWithResources {
-    id         String     @default(uuid())
-    Services   Services?  @relation(fields: [serviceId], references: [id], onDelete: Cascade)
-    serviceId  String
-    Resources  Resources? @relation(fields: [resourceId], references: [id], onDelete: Cascade)
-    resourceId String
-    Clinics    Clinics?   @relation(fields: [clinicsId], references: [id], onDelete: Cascade)
-    clinicsId  String?
+model ServiceInClinic {
+    Services   Services? @relation(fields: [servicesId], references: [id])
+    servicesId String
+    Clinics    Clinics?  @relation(fields: [clinicsId], references: [id])
+    clinicsId  String
 
-    @@id([serviceId, resourceId])
+    @@id([servicesId, clinicsId])
+}
+
+model ServicesWithResources {
+    Resources   Resources? @relation(fields: [resourcesId], references: [id])
+    resourcesId String
+    Services    Services?  @relation(fields: [servicesId], references: [id])
+    servicesId  String
+
+    @@id([resourcesId, servicesId])
 }
 
 model ResourcesInClinic {

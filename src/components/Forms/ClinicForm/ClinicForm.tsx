@@ -21,21 +21,20 @@ const ClinicForm = ({ update, clinicId }: ClinicFormProps) => {
   const ctx = trpc.useContext();
   const [inputValue, setInputValue] = useState<Input>();
 
-  const getClinicInfo = clinicId
-    ? trpc.useQuery(["clinics.getClinic", { id: clinicId }], {
-        onSettled: (data) => {
-          if (data) {
-            setInputValue({
-              name: data.name,
-              city: data.city,
-              country: data.country,
-              postalCode: data.postalCode,
-              streetName: data.streetName,
-            });
-          }
-        },
-      })
-    : null;
+  trpc.useQuery(["clinics.getClinic", { id: clinicId }], {
+    enabled: !!clinicId,
+    onSettled: (data) => {
+      if (data) {
+        setInputValue({
+          name: data.name,
+          city: data.city,
+          country: data.country,
+          postalCode: data.postalCode,
+          streetName: data.streetName,
+        });
+      }
+    },
+  });
 
   const postClinic = trpc.useMutation(["clinics.createClinic"], {
     onMutate: () => {
@@ -174,7 +173,7 @@ const ClinicForm = ({ update, clinicId }: ClinicFormProps) => {
       <div className="flex justify-end">
         <button
           type="submit"
-          className="bg-blue-100 rounded-md py-2 px-4 hover:bg-blue-400 flex justify-center items-center gap-2 w-fit"
+          className="bg-blue-100 rounded-md py-2 px-4 hover:bg-blue-200 flex justify-center items-center gap-2 w-fit"
         >
           Lagre{" "}
           {postClinic.isLoading && (

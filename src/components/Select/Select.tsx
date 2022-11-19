@@ -1,32 +1,37 @@
-import { Services } from "@prisma/client";
+import { Clinics, Services } from "@prisma/client";
 import classNames from "classnames";
 import { useState } from "react";
 import { ArrowDown, Check, X } from "react-feather";
 
-type SingleSelectProps = {
+type SingleSelectProps<T> = {
   multiple?: false;
-  value?: Services;
-  onChange: (value: Services | undefined) => void;
+  value?: T;
+  onChange: (value: T | undefined) => void;
 };
 
-type MultiSelectDropdownProps = {
+type MultiSelectDropdownProps<T> = {
   multiple: true;
-  value: Services[];
-  onChange: (service: Services[]) => void;
+  value: T[];
+  onChange: (service: T[]) => void;
 };
 
-type SelectProps = {
-  options: Services[];
-} & (SingleSelectProps | MultiSelectDropdownProps);
+type SelectProps<T> = {
+  options: T[];
+} & (SingleSelectProps<T> | MultiSelectDropdownProps<T>);
 
-const Select = ({ options, value, multiple, onChange }: SelectProps) => {
+const Select = <T extends Services | Clinics>({
+  options,
+  value,
+  multiple,
+  onChange,
+}: SelectProps<T>) => {
   const [isOpen, setIsOpen] = useState(false);
 
-  const isOptionSelected = (option: Services) => {
+  const isOptionSelected = (option: T) => {
     return multiple ? value.includes(option) : option === value;
   };
 
-  const selectOption = (option: Services) => {
+  const selectOption = (option: T) => {
     if (multiple) {
       if (value.includes(option)) {
         onChange(value.filter((o) => o !== option));
@@ -70,7 +75,7 @@ const Select = ({ options, value, multiple, onChange }: SelectProps) => {
       <ul
         className={classNames(
           { "flex flex-col": isOpen, hidden: !isOpen },
-          "absolute -bottom-1 translate-y-full w-full border rounded-lg bg-white shadow-md"
+          "absolute -bottom-1 translate-y-full w-full border rounded-lg bg-white shadow-md max-h-52 min-h-fit overflow-auto"
         )}
       >
         {options?.map((option, index) => {

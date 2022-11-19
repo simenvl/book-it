@@ -171,7 +171,7 @@ const ServicesForm = () => {
       <div className="flex justify-end">
         <button
           type="submit"
-          className="bg-blue-100 rounded-md py-2 px-4 hover:bg-blue-400 flex justify-center items-center gap-2 w-fit"
+          className="bg-blue-100 rounded-md py-2 px-4 hover:bg-blue-200 flex justify-center items-center gap-2 w-fit"
         >
           Lagre{" "}
           {postService.isLoading && (

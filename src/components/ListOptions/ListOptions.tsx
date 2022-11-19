@@ -35,22 +35,22 @@ const ListOptions = ({ clinicId, services, resourceId }: ListOptionsProps) => {
     }
   );
 
-  // const updateResource = trpc.useMutation(["resources.updateResource"], {
-  //   onMutate: () => {
-  //     ctx.cancelQuery(["services.getServiceInResource"]);
+  const updateResource = trpc.useMutation(["resources.updateResource"], {
+    onMutate: () => {
+      ctx.cancelQuery(["services.getServiceInResource"]);
 
-  //     const optimisticUpdate = ctx.getQueryData([
-  //       "services.getServiceInResource",
-  //     ]);
+      const optimisticUpdate = ctx.getQueryData([
+        "services.getServiceInResource",
+      ]);
 
-  //     if (optimisticUpdate) {
-  //       ctx.setQueryData(["services.getServiceInResource"], optimisticUpdate);
-  //     }
-  //   },
-  //   onSettled: () => {
-  //     ctx.invalidateQueries(["services.getServiceInResource"]);
-  //   },
-  // });
+      if (optimisticUpdate) {
+        ctx.setQueryData(["services.getServiceInResource"], optimisticUpdate);
+      }
+    },
+    onSettled: () => {
+      ctx.invalidateQueries(["services.getServiceInResource"]);
+    },
+  });
 
   // const deleteServiceFromResource = trpc.useMutation(
   //   ["resources.deleteServiceFromResource"],
@@ -77,7 +77,14 @@ const ListOptions = ({ clinicId, services, resourceId }: ListOptionsProps) => {
       <MultiSelectDropdown
         multiple
         options={services}
-        onChange={(o) => setValue(o)}
+        onChange={(o) => {
+          updateResource.mutate({
+            resourceId: resourceId,
+            serviceId: o.map((service) => service.id),
+          });
+
+          setValue(o);
+        }}
         value={value}
       />
     </>

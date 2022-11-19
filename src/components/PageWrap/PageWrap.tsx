@@ -18,7 +18,7 @@ const PageWrap = ({
   formTitle,
 }: PageWrapProps) => {
   return (
-    <div className="flex gap-4 flex-col bg-white rounded-lg p-8 shadow-md divide-y-2">
+    <div className="flex gap-4 flex-col bg-white rounded-lg p-8 shadow-md divide-y-2 max-w-xl m-auto">
       <div className="flex justify-between items-center">
         <h1 className="text-xl font-bold">{title}</h1>
         {form && buttonTitle && formTitle && (

@@ -43,8 +43,6 @@ const Clinic: NextPage = (props) => {
     setSettingsView(view);
   };
 
-  console.log({ modalOpen });
-
   return (
     <>
       {!clinics.isLoading && (

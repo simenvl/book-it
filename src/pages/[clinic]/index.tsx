@@ -43,6 +43,8 @@ const Clinic: NextPage = (props) => {
     setSettingsView(view);
   };
 
+  console.log({ modalOpen });
+
   return (
     <>
       {!clinics.isLoading && (
@@ -70,26 +72,27 @@ const Clinic: NextPage = (props) => {
                       {clinics.data?.map((clinic) => (
                         <div
                           key={clinic.id}
-                          className="flex justify-between items-center"
+                          className="flex justify-between items-center p-4"
                         >
                           <Link
                             href={{
                               pathname: `${clinic.name.toLowerCase()}`,
                             }}
                           >
-                            <div
-                              className="w-full p-4 flex flex-col gap-2 cursor-pointer hover:bg-gray-100 rounded-lg"
+                            <button
+                              className="w-full flex flex-col gap-2 cursor-pointer rounded-lg"
                               onClick={(e) => {
                                 console.log(e);
+                                e.stopPropagation();
                                 setClinicId(clinic.id);
-                                setModalOpen(!modalOpen);
+                                setModalOpen((prev) => !prev);
                               }}
                             >
                               <span className="font-bold">{clinic.name}</span>
                               <span className="text-sm">
                                 {clinic.streetName}
                               </span>
-                            </div>
+                            </button>
                           </Link>
                           <Edit
                             className="cursor-pointer"

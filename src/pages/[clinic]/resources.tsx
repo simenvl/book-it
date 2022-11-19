@@ -39,6 +39,7 @@ const Resources: NextPage = (props) => {
               buttonTitle={resource.name}
               buttonClassName="font-bold"
             >
+              <h2 className="text-lg ">{resource.name}</h2>
               {services && (
                 <ListOptions
                   clinicId={clinicId}

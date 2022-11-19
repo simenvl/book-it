@@ -5,14 +5,24 @@ export const resourcesRouter = createRouter()
   .mutation("createResource", {
     input: z.object({
       name: z.string(),
-      clinicsId: z.string(),
+      clinicsIds: z.string(),
     }),
     async resolve({ ctx, input }) {
       try {
         await ctx.prisma.resources.create({
           data: {
             name: input.name,
-            clinics: { create: { clinicsId: input.clinicsId } },
+            clinics: {
+              create: [
+                {
+                  Clinics: {
+                    connect: {
+                      id: input.clinicsIds,
+                    },
+                  },
+                },
+              ],
+            },
           },
         });
       } catch (error) {
@@ -114,7 +124,7 @@ export const resourcesRouter = createRouter()
   .mutation("updateResource", {
     input: z.object({
       resourceId: z.string(),
-      serviceId: z.string(),
+      serviceId: z.array(z.string()),
     }),
     async resolve({ ctx, input }) {
       try {
@@ -122,14 +132,9 @@ export const resourcesRouter = createRouter()
           where: { id: input.resourceId },
           data: {
             services: {
-              deleteMany: {
-                servicesId: input.serviceId,
-                resourcesId: input.resourceId,
-              },
+              deleteMany: {},
               createMany: {
-                data: {
-                  servicesId: input.serviceId,
-                },
+                data: input.serviceId.map((id) => ({ servicesId: id })),
               },
             },
           },

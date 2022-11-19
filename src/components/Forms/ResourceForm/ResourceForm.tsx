@@ -2,6 +2,8 @@ import { ChangeEvent, FormEvent, useState } from "react";
 import { trpc } from "../../../utils/trpc";
 import _isEmpty from "lodash/isEmpty";
 import useHistoryStore from "../../../hooks/useHistoryStore";
+import Select from "../../Select";
+import { Clinics } from "@prisma/client";
 
 type Input = {
   name: string;
@@ -15,8 +17,14 @@ const ResourceForm = () => {
     name: "",
     clinicsId: "",
   });
+  const [value, setValue] = useState<Clinics[]>([]);
+  const [clinics, setClinics] = useState<Clinics[]>([]);
 
-  const clinics = trpc.useQuery(["clinics.getAllClinics"]);
+  const clinicsQuery = trpc.useQuery(["clinics.getAllClinics"], {
+    onSuccess: (data) => {
+      setClinics(data);
+    },
+  });
   const postResource = trpc.useMutation(["resources.createResource"], {
     onMutate: () => {
       ctx.cancelQuery(["resources.getResourceInClinic"]);
@@ -58,9 +66,11 @@ const ResourceForm = () => {
         }
 
         if (!_isEmpty(inputValue)) {
-          postResource.mutate({
-            name: inputValue?.name,
-            clinicsId: inputValue.clinicsId,
+          value.map((c) => {
+            postResource.mutate({
+              name: inputValue?.name,
+              clinicsIds: c.id,
+            });
           });
         }
 
@@ -84,28 +94,19 @@ const ResourceForm = () => {
 
       <div className="flex flex-col">
         <label htmlFor="clinicName">Velg klinikk(er)</label>
-        <select
-          className="outline-none border rounded-md px-4 py-2"
-          name="clinicsId"
-          onChange={handleInpuChange}
-        >
-          <option value="" selected>
-            Velg en klinikk
-          </option>
-          {clinics.data?.map((clinic) => {
-            return (
-              <option key={clinic.id} value={clinic.id}>
-                {clinic.name}
-              </option>
-            );
-          })}
-        </select>
+
+        <Select
+          multiple
+          options={clinics}
+          onChange={(o) => setValue(o)}
+          value={value}
+        />
       </div>
 
       <div className="flex justify-end">
         <button
           type="submit"
-          className="bg-blue-100 rounded-md py-2 px-4 hover:bg-blue-400 flex justify-center items-center gap-2 w-fit"
+          className="bg-blue-100 rounded-md py-2 px-4 hover:bg-blue-200 flex justify-center items-center gap-2 w-fit"
         >
           Lagre{" "}
           {postResource.isLoading && (
